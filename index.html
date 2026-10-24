@@ -82,6 +82,10 @@ section{padding-block:34px;border-top:1px solid var(--line)}
 .links a span:first-child{font-weight:600}
 .links a small{color:var(--muted);font-size:.84rem;text-align:right}
 .links a:hover span:first-child{color:var(--accent)}
+.wa-card{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--line)}
+.wa-card b{display:block}
+.wa-card small{color:var(--muted);font-size:.84rem}
+.btn.wa{background:#1F8F4E;color:#fff}
 .tags{display:flex;flex-wrap:wrap;gap:8px}
 .tags a{font-family:var(--mono);font-size:.85rem;text-decoration:none;padding:7px 11px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
 
@@ -363,7 +367,11 @@ const FRASES = [
   const listHTML = (arr, emptyMsg) => arr.length ? arr.map(p => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener"><span>${esc(p.nombre)}</span><small>${esc(p.nota||"")}</small></a></li>`).join("")
     : `<li class="empty" style="border:1px dashed var(--line);margin-top:4px">${emptyMsg}</li>`;
   $("#ig-list").innerHTML = listHTML(INSTAGRAM_PERFILES, "Aún no hay perfiles verificados. ¿Conoces uno? Compártelo abajo.");
-  $("#wa-list").innerHTML = listHTML(WHATSAPP_CANALES, "Aún no hay canales verificados. Si administras uno o conoces uno abierto, compártelo abajo.");
+  $("#wa-list").innerHTML = WHATSAPP_CANALES.length ? WHATSAPP_CANALES.map(c => {
+    const grupo = /chat\.whatsapp\.com/.test(c.url);
+    return `<li class="wa-card"><div style="min-width:0"><b>${esc(c.nombre)}</b><small>${grupo ? "Grupo" : "Canal"} · ${esc(c.nota||"")}</small></div>
+      <a class="btn wa" href="${esc(c.url)}" target="_blank" rel="noopener">${grupo ? "Unirme al grupo" : "Unirme al canal"} →</a></li>`;
+  }).join("") : listHTML([], "Aún no hay canales verificados. Si administras uno o conoces uno abierto, compártelo abajo.");
 
   // Compartir
   const FORMATO = "Nueva oportunidad para Radar Setter:\n• Puesto (setter/closer):\n• Empresa:\n• Idioma:\n• Pago:\n• Link para aplicar:\n• Instagram o WhatsApp de contacto (si es público):";
