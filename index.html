@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+<title>Radar Setter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: agenda de un setter — cada oportunidad es un "slot" con hora/fecha a la izquierda; directorio en columnas debajo */
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#13202E; --muted:#5B6878; --line:#DCE2E8;
+  --accent:#0B6E6E; --accent-soft:#DDF0EE; --amber:#B86E12; --amber-soft:#FBEBD3; --warn:#9B2C2C; --warn-soft:#FBE4E4;
+  --display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F161E; --surface:#16202B; --ink:#E6ECF2; --muted:#9AA8B7; --line:#26333F;
+  --accent:#4FC2BE; --accent-soft:#143534; --amber:#F0B55E; --amber-soft:#3A2B14; --warn:#F19A9A; --warn-soft:#3A1B1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F161E; --surface:#16202B; --ink:#E6ECF2; --muted:#9AA8B7; --line:#26333F;
+  --accent:#4FC2BE; --accent-soft:#143534; --amber:#F0B55E; --amber-soft:#3A2B14; --warn:#F19A9A; --warn-soft:#3A1B1B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;text-wrap:balance;margin:0}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* HERO */
+header.hero{padding-block:48px 28px}
+.hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:32px;align-items:end}
+.hero h1{font-size:clamp(2.6rem,7vw,4.6rem);font-weight:800;letter-spacing:-.02em}
+.hero h1 span{color:var(--accent)}
+.hero p.lead{color:var(--muted);max-width:52ch;margin:14px 0 0;font-size:1.08rem}
+.stats{display:flex;gap:22px;flex-wrap:wrap;margin-top:22px;font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+.stats b{display:block;font-family:var(--display);font-size:1.8rem;color:var(--ink);font-variant-numeric:tabular-nums}
+.quote{background:var(--amber-soft);border-radius:4px 18px 18px 18px;padding:22px 24px;position:relative}
+.quote blockquote{margin:6px 0 10px;font-family:var(--display);font-weight:500;font-size:1.32rem;line-height:1.3}
+.quote cite{font-style:normal;font-size:.88rem;color:var(--muted)}
+.quote .eyebrow{color:var(--amber)}
+.quote button{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--amber);color:var(--amber);border-radius:999px;font:600 .75rem var(--body);padding:4px 10px;cursor:pointer}
+
+section{padding-block:34px;border-top:1px solid var(--line)}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.sec-head h2{font-size:clamp(1.6rem,3.6vw,2.2rem);font-weight:700}
+.sec-head p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+
+/* FILTROS */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filters input,.filters select{font:inherit;font-size:.95rem;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.filters input{flex:1 1 220px;min-width:0}
+.chip{font:600 .85rem var(--body);padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* SLOTS */
+.slots{display:grid;gap:10px}
+.slot{display:grid;grid-template-columns:86px 1fr auto;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.slot time{font-family:var(--mono);font-size:.78rem;color:var(--muted);line-height:1.3;border-right:1px dashed var(--line);padding-right:12px}
+.slot time b{display:block;font-size:1.25rem;color:var(--ink);font-variant-numeric:tabular-nums}
+.slot h3{font-size:1.12rem;font-weight:700}
+.slot .meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px;font-size:.88rem;color:var(--muted)}
+.slot .body{min-width:0}
+.tag{font:600 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.tag.closer{background:var(--amber-soft);color:var(--amber)}
+.btn{display:inline-flex;align-items:center;gap:6px;font:600 .92rem var(--body);text-decoration:none;padding:10px 16px;border-radius:10px;background:var(--accent);color:var(--bg);border:0;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.empty{padding:22px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center}
+
+/* DIRECTORIO */
+.dir{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.col h3{font-size:1.2rem;margin-bottom:4px}
+.col > p{margin:0 0 12px;color:var(--muted);font-size:.92rem}
+.links{list-style:none;margin:0;padding:0;display:grid}
+.links li{border-top:1px solid var(--line)}
+.links a{display:flex;justify-content:space-between;gap:12px;padding:11px 0;text-decoration:none;color:var(--ink)}
+.links a span:first-child{font-weight:600}
+.links a small{color:var(--muted);font-size:.84rem;text-align:right}
+.links a:hover span:first-child{color:var(--accent)}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tags a{font-family:var(--mono);font-size:.85rem;text-decoration:none;padding:7px 11px;border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+
+/* CHECKLIST */
+.check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 28px;counter-reset:c;margin:0;padding:0;list-style:none}
+.check li{display:grid;grid-template-columns:auto 1fr;gap:12px}
+.check input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent)}
+.check b{display:block}
+.check span{color:var(--muted);font-size:.93rem}
+
+.alert{background:var(--warn-soft);color:var(--ink);border-radius:14px;padding:18px 20px;display:grid;gap:6px}
+.alert strong{color:var(--warn);font-family:var(--display);font-size:1.15rem}
+.share{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;background:var(--ink);color:var(--bg);border-radius:18px;padding:24px}
+.share h3{font-size:1.4rem}
+.share p{margin:6px 0 0;opacity:.8}
+.share .btns{display:flex;gap:10px;flex-wrap:wrap}
+.share .btn{background:var(--bg);color:var(--ink)}
+.share .btn.ghost{background:transparent;color:var(--bg);border-color:var(--bg)}
+footer{padding-block:28px 48px;color:var(--muted);font-size:.86rem}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600}
+
+@media (max-width:760px){
+  .hero-grid,.dir,.check,.share{grid-template-columns:1fr}
+  .slot{grid-template-columns:1fr;gap:10px}
+  .slot time{border-right:0;padding-right:0;display:flex;gap:8px;align-items:baseline}
+  .slot time b{display:inline;font-size:1rem}
+}
+@media (prefers-reduced-motion:no-preference){.quote blockquote{transition:opacity .25s}}
+</style>
+
+<script>
+/* ============================================================
+   ✏️  CÓMO ACTUALIZAR EL SITIO (todo se edita aquí arriba)
+   1. Para agregar una oportunidad, copia un bloque { ... } de
+      OPORTUNIDADES y cambia los datos. La más nueva va primero.
+   2. Para agregar un perfil de Instagram o canal de WhatsApp,
+      agrégalo a INSTAGRAM_PERFILES o WHATSAPP_CANALES.
+   3. Cambia ULTIMA_ACTUALIZACION y guarda (Commit) en GitHub.
+   ============================================================ */
+const ULTIMA_ACTUALIZACION = "2026-10-24";
+
+// Tu número para que la gente te envíe oportunidades (formato: código país + número, sin + ni espacios). Déjalo "" si no quieres.
+const WHATSAPP_ADMIN = "";
+
+const OPORTUNIDADES = [
+  { fecha:"2026-10-24", rol:"setter", titulo:"Setter High Ticket (Instagram/Facebook)", empresa:"Coach Social", idioma:"ES", pago:"$800–1,300 USD/mes", lugar:"Remoto · LATAM", fuente:"Get on Board", url:"https://www.getonbrd.com/jobs/comercial-ventas/setter-high-ticket-instagram-facebook-coach-social-remote" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Buscamos Setter (IA / software)", empresa:"Marpel 360 AI", idioma:"ES", pago:"600–2,000 €/mes · comisión", lugar:"Remoto · mín. 4 h/día", fuente:"Indeed España", url:"https://es.indeed.com/q-appointment-setter,-closer-empleos.html" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Appointment Setter – High-Ticket Sales", empresa:"Deep Sea Media", idioma:"EN", pago:"40% por venta cerrada", lugar:"Remoto · puedes prospectar en tu idioma", fuente:"Workable", url:"https://jobs.workable.com/view/045542fe-b2ba-4b16-8ded-726bf32c8b73" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Appointment Setter – Ecom Mentorship", empresa:"Cliente en Upwork", idioma:"EN", pago:"$10–15/hora", lugar:"Remoto · +30 h/semana", fuente:"Upwork", url:"https://www.upwork.com/freelance-jobs/apply/Appointment-Setter-High-Ticket-Ecom-Mentorship-Program_~022061108948287377879/" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Appointment Setter / SDR (DMs de Instagram)", empresa:"RealRevenue", idioma:"EN", pago:"Comisión + base tras 1er cliente", lugar:"Remoto · mundial", fuente:"Upwork", url:"https://www.upwork.com/freelance-jobs/apply/Appointment-Setter-SDR-for-High-Ticket-Agency_~021990675280168837445" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Setter – leads inbound (sin cold outreach)", empresa:"Harucon Ventures", idioma:"EN", pago:"Por desempeño", lugar:"Remoto", fuente:"Salesfolks", url:"https://salesfolks.com/job/setter" },
+  { fecha:"2026-10-24", rol:"setter", titulo:"Outbound Appointment Setter (social selling)", empresa:"Negocio de servicios (EE. UU.)", idioma:"EN", pago:"$600–2,000 USD/mes", lugar:"Remoto · tiempo completo", fuente:"Pros Marketplace", url:"https://prosmarketplace.com/job/job-detail/outbound-appointment-setter-social-selling-and-messaging-expert" },
+  { fecha:"2026-10-24", rol:"closer", titulo:"B2B High-Ticket Closer · 18% comisión", empresa:"G&T Consulting", idioma:"EN", pago:"18% · tickets $1,500–4,000", lugar:"Remoto · solo EE. UU.", fuente:"Skool · Remote Sales Secrets", url:"https://www.skool.com/remote-sales-secrets/18-starting-commission-hiring-b2b-high-ticket-closer-2" },
+  { fecha:"2026-10-24", rol:"closer", titulo:"High Ticket Sales Closer", empresa:"1Realtor.io", idioma:"EN", pago:"10% · paquetes $5K–25K", lugar:"Remoto · mundial", fuente:"Upwork", url:"https://www.upwork.com/freelance-jobs/apply/High-Ticket-Sales-Closer-1Realtor-Lead-Generation-for-Realtors_~021987985612294719339" }
+];
+
+// Perfiles de Instagram que publican vacantes. Solo agrega cuentas que hayas revisado tú misma.
+// Ejemplo: { nombre:"@cuenta", url:"https://instagram.com/cuenta", nota:"Vacantes setter en español" }
+const INSTAGRAM_PERFILES = [];
+
+// Canales o grupos de WhatsApp (pide permiso al admin antes de publicar un link de grupo).
+// Ejemplo: { nombre:"Setters LATAM", url:"https://whatsapp.com/channel/XXXX", nota:"Español" }
+const WHATSAPP_CANALES = [];
+
+const FRASES = [
+  ["La persistencia es para el carácter del hombre lo que el carbono es para el acero.","Napoleon Hill"],
+  ["Cada adversidad trae consigo la semilla de un beneficio equivalente o mayor.","Napoleon Hill · Piense y hágase rico"],
+  ["No subes al nivel de tus metas. Caes al nivel de tus sistemas.","James Clear · Hábitos atómicos"],
+  ["Los hábitos son el interés compuesto de la superación personal.","James Clear · Hábitos atómicos"],
+  ["El entusiasmo es común. La resistencia es rara.","Angela Duckworth · Grit"],
+  ["La única forma de ganar es aprender más rápido que los demás.","Eric Ries · El método Lean Startup"],
+  ["El éxito es la suma de pequeños esfuerzos repetidos día tras día.","Robert Collier"],
+  ["El fracaso es una oportunidad para empezar de nuevo, con más inteligencia.","Henry Ford"],
+  ["No importa lo lento que vayas, siempre y cuando no te detengas.","Atribuida a Confucio"],
+  ["No tienes que ser grande para empezar, pero tienes que empezar para ser grande.","Zig Ziglar"],
+  ["Lo que se mide, mejora.","Atribuida a Peter Drucker"],
+  ["Un ‘no’ no es el final; es información para la próxima llamada.","Principio del setter"]
+];
+</script>
+
+</head>
+<body>
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Para setters y closers · ES / EN</div>
+      <h1>Radar <span>Setter</span></h1>
+      <p class="lead">Oportunidades de setting y closing reunidas en un solo lugar, más las bolsas, comunidades y perfiles donde se publican. Aplica hoy, no mañana.</p>
+      <div class="stats">
+        <div><b id="s-total">0</b>oportunidades</div>
+        <div><b id="s-es">0</b>en español</div>
+        <div><b id="s-fecha">—</b>última revisión</div>
+      </div>
+    </div>
+    <aside class="quote" aria-live="polite">
+      <div class="eyebrow">Frase del día</div>
+      <blockquote id="q-text"></blockquote>
+      <cite id="q-cite"></cite>
+      <button id="q-next" type="button">Otra</button>
+    </aside>
+  </div>
+</header>
+
+<main>
+<section id="oportunidades">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Agenda de oportunidades</h2>
+        <p>Cada vacante enlaza a la publicación original. Algunas cierran rápido: revisa que siga abierta antes de aplicar.</p>
+      </div>
+    </div>
+    <div class="filters" role="group" aria-label="Filtros">
+      <input id="f-q" type="search" placeholder="Buscar empresa, pago, plataforma…" aria-label="Buscar">
+      <button class="chip" data-f="rol" data-v="todos" aria-pressed="true" type="button">Todos</button>
+      <button class="chip" data-f="rol" data-v="setter" aria-pressed="false" type="button">Setter</button>
+      <button class="chip" data-f="rol" data-v="closer" aria-pressed="false" type="button">Closer</button>
+      <select id="f-lang" aria-label="Idioma">
+        <option value="todos">Español e inglés</option>
+        <option value="ES">Solo español</option>
+        <option value="EN">Solo inglés</option>
+      </select>
+    </div>
+    <div class="slots" id="slots"></div>
+  </div>
+</section>
+
+<section id="directorio">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Dónde buscar todos los días</h2>
+        <p>Guarda esta lista y revisa 2 o 3 fuentes cada mañana. Las vacantes buenas reciben decenas de postulaciones en las primeras 24 horas.</p>
+      </div>
+    </div>
+    <div class="dir">
+      <div class="col">
+        <h3>Bolsas de empleo</h3>
+        <p>Vacantes publicadas por empresas, con pago y requisitos visibles.</p>
+        <ul class="links">
+          <li><a href="https://www.getonbrd.com/" target="_blank" rel="noopener"><span>Get on Board</span><small>LATAM · español</small></a></li>
+          <li><a href="https://www.workana.com/es/jobs" target="_blank" rel="noopener"><span>Workana</span><small>Freelance · español</small></a></li>
+          <li><a href="https://es.indeed.com/q-appointment-setter,-closer-empleos.html" target="_blank" rel="noopener"><span>Indeed España</span><small>"setter, closer"</small></a></li>
+          <li><a href="https://www.indeed.com/q-high-ticket-setter-jobs.html" target="_blank" rel="noopener"><span>Indeed EE. UU.</span><small>"high ticket setter"</small></a></li>
+          <li><a href="https://www.upwork.com/nx/search/jobs/?q=appointment%20setter" target="_blank" rel="noopener"><span>Upwork</span><small>"appointment setter"</small></a></li>
+          <li><a href="https://remotive.com/remote-jobs/sales" target="_blank" rel="noopener"><span>Remotive</span><small>Ventas remotas · inglés</small></a></li>
+          <li><a href="https://salesfolks.com/" target="_blank" rel="noopener"><span>Salesfolks</span><small>Setters y closers · inglés</small></a></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Comunidades con job board</h3>
+        <p>Grupos de Skool donde se publican vacantes. Las tres tienen acceso gratuito.</p>
+        <ul class="links">
+          <li><a href="https://www.skool.com/inbound-remote-sales" target="_blank" rel="noopener"><span>Inbound &amp; Remote Sales Jobs</span><small>Reclutamiento gratis · inglés</small></a></li>
+          <li><a href="https://www.skool.com/remote-sales-secrets" target="_blank" rel="noopener"><span>Remote Sales Secrets</span><small>Job board · inglés</small></a></li>
+          <li><a href="https://www.skool.com/king-closers-7235" target="_blank" rel="noopener"><span>The Setter Mafia</span><small>Job board · inglés</small></a></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Instagram</h3>
+        <p>Muchos negocios publican "buscamos setter" en historias y posts. Explora estos hashtags (necesitas iniciar sesión).</p>
+        <div class="tags" id="ig-tags"></div>
+        <ul class="links" id="ig-list" style="margin-top:12px"></ul>
+      </div>
+      <div class="col">
+        <h3>WhatsApp</h3>
+        <p>Canales y grupos compartidos por la comunidad. Únete solo a los que conozcas y nunca pagues por entrar a un grupo de "vacantes".</p>
+        <ul class="links" id="wa-list"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="diagnostico">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <h2>Si llevas meses sin resultados, revisa esto</h2>
+        <p>Perseverar es necesario, pero también hay que saber qué cambiar. Marca lo que ya haces; lo que quede sin marcar es tu siguiente paso.</p>
+      </div>
+    </div>
+    <ul class="check" id="check">
+      <li><input type="checkbox" id="c1"><label for="c1"><b>Aplico a 5+ vacantes por día</b><span>Es un juego de volumen, igual que el setting. 2 por semana no alcanza.</span></label></li>
+      <li><input type="checkbox" id="c2"><label for="c2"><b>Envío un video Loom de 60–90 segundos</b><span>La mayoría de empresas high ticket lo piden. Mira a la cámara, sin leer guion.</span></label></li>
+      <li><input type="checkbox" id="c3"><label for="c3"><b>Tengo un portafolio de una página</b><span>Experiencia, números (citas agendadas, show rate), capturas de conversaciones sin datos privados.</span></label></li>
+      <li><input type="checkbox" id="c4"><label for="c4"><b>Aplico en las primeras 24 horas</b><span>Las vacantes viejas ya tienen a su candidato. Prioriza lo publicado hoy.</span></label></li>
+      <li><input type="checkbox" id="c5"><label for="c5"><b>Hago seguimiento a los 2–3 días</b><span>Un mensaje corto al reclutador o fundador. Lo que pides a tus leads, hazlo tú.</span></label></li>
+      <li><input type="checkbox" id="c6"><label for="c6"><b>Llevo un registro de postulaciones</b><span>Fecha, empresa, respuesta. Si 30 aplicaciones dan 0 entrevistas, el problema está en el perfil o el video.</span></label></li>
+      <li><input type="checkbox" id="c7"><label for="c7"><b>Busco también en inglés</b><span>El mercado en inglés es mucho más grande. Inglés intermedio por chat ya abre puertas.</span></label></li>
+      <li><input type="checkbox" id="c8"><label for="c8"><b>Me presento directo a negocios</b><span>Escríbele a coaches e infoproductores que venden por DM aunque no publiquen vacante. Usa tu propia técnica de setter.</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap" style="display:grid;gap:18px">
+    <div class="alert" role="note">
+      <strong>Cuidado con las estafas</strong>
+      <span>Ningún trabajo legítimo te cobra por aplicar, por "capacitación obligatoria" o por entrar a un grupo de vacantes. Desconfía de pagos solo por comisión sin leads, oferta ni proceso claro, y de quien pide datos bancarios antes de firmar algo.</span>
+    </div>
+    <div class="share">
+      <div>
+        <h3>¿Viste una oportunidad?</h3>
+        <p>Compártela por WhatsApp con el formato listo y la sumamos a la agenda.</p>
+      </div>
+      <div class="btns">
+        <a class="btn" id="share-wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <button class="btn ghost" id="share-copy" type="button">Copiar formato</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Radar Setter es una iniciativa de la comunidad, sin relación oficial con ningún programa de formación. Última actualización: <span id="f-fecha"></span>.</div>
+</footer>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const fmt = d => { const [y,m,dd] = d.split("-"); return {dia:+dd, mes:MESES[+m-1], y}; };
+
+  // Frase del día (cambia sola cada día)
+  const today = new Date();
+  let qi = Math.floor(today.getTime()/86400000) % FRASES.length;
+  const showQ = () => { $("#q-text").textContent = "“" + FRASES[qi][0] + "”"; $("#q-cite").textContent = "— " + FRASES[qi][1]; };
+  showQ();
+  $("#q-next").addEventListener("click", () => { qi = (qi+1) % FRASES.length; showQ(); });
+
+  // Stats
+  const f = fmt(ULTIMA_ACTUALIZACION);
+  $("#s-total").textContent = OPORTUNIDADES.length;
+  $("#s-es").textContent = OPORTUNIDADES.filter(o => o.idioma === "ES").length;
+  $("#s-fecha").textContent = f.dia + " " + f.mes;
+  $("#f-fecha").textContent = f.dia + " " + f.mes + " " + f.y;
+
+  // Oportunidades
+  const state = { rol:"todos", lang:"todos", q:"" };
+  try { const s = JSON.parse(localStorage.getItem("radar-filtros")||"{}"); Object.assign(state, s, {q:""}); } catch(e){}
+  function render(){
+    const q = state.q.toLowerCase();
+    const list = OPORTUNIDADES.filter(o =>
+      (state.rol === "todos" || o.rol === state.rol) &&
+      (state.lang === "todos" || o.idioma === state.lang) &&
+      (!q || Object.values(o).join(" ").toLowerCase().includes(q)));
+    $("#slots").innerHTML = list.length ? list.map(o => { const d = fmt(o.fecha); return `
+      <article class="slot">
+        <time datetime="${esc(o.fecha)}"><b>${d.dia} ${d.mes}</b>${esc(o.idioma)}</time>
+        <div class="body">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+            <span class="tag ${o.rol === "closer" ? "closer" : ""}">${esc(o.rol)}</span>
+            <span class="eyebrow">${esc(o.fuente)}</span>
+          </div>
+          <h3>${esc(o.titulo)}</h3>
+          <div class="meta"><span>${esc(o.empresa)}</span><span>${esc(o.pago)}</span><span>${esc(o.lugar)}</span></div>
+        </div>
+        <a class="btn" href="${esc(o.url)}" target="_blank" rel="noopener">Ver y aplicar →</a>
+      </article>`; }).join("") : `<div class="empty">No hay oportunidades con esos filtros. Prueba quitando alguno.</div>`;
+    document.querySelectorAll('.chip[data-f="rol"]').forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.rol));
+    $("#f-lang").value = state.lang;
+    try { localStorage.setItem("radar-filtros", JSON.stringify({rol:state.rol, lang:state.lang})); } catch(e){}
+  }
+  document.querySelectorAll('.chip[data-f="rol"]').forEach(b => b.addEventListener("click", () => { state.rol = b.dataset.v; render(); }));
+  $("#f-lang").addEventListener("change", e => { state.lang = e.target.value; render(); });
+  $("#f-q").addEventListener("input", e => { state.q = e.target.value; render(); });
+  render();
+
+  // Instagram
+  const HASHTAGS = ["appointmentsetter","highticketcloser","highticketsales","remotesales","setterdeventas","closerdeventas","ventashighticket"];
+  $("#ig-tags").innerHTML = HASHTAGS.map(h => `<a href="https://www.instagram.com/explore/tags/${h}/" target="_blank" rel="noopener">#${h}</a>`).join("");
+  const listHTML = (arr, emptyMsg) => arr.length ? arr.map(p => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener"><span>${esc(p.nombre)}</span><small>${esc(p.nota||"")}</small></a></li>`).join("")
+    : `<li class="empty" style="border:1px dashed var(--line);margin-top:4px">${emptyMsg}</li>`;
+  $("#ig-list").innerHTML = listHTML(INSTAGRAM_PERFILES, "Aún no hay perfiles verificados. ¿Conoces uno? Compártelo abajo.");
+  $("#wa-list").innerHTML = listHTML(WHATSAPP_CANALES, "Aún no hay canales verificados. Si administras uno o conoces uno abierto, compártelo abajo.");
+
+  // Compartir
+  const FORMATO = "Nueva oportunidad para Radar Setter:\n• Puesto (setter/closer):\n• Empresa:\n• Idioma:\n• Pago:\n• Link para aplicar:\n• Instagram o WhatsApp de contacto (si es público):";
+  $("#share-wa").href = "https://wa.me/" + WHATSAPP_ADMIN + "?text=" + encodeURIComponent(FORMATO);
+  const toast = m => { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 1800); };
+  $("#share-copy").addEventListener("click", () => {
+    navigator.clipboard.writeText(FORMATO).then(() => toast("Formato copiado")).catch(() => toast("No se pudo copiar; usa el botón de WhatsApp"));
+  });
+
+  // Checklist (se recuerda en tu navegador)
+  document.querySelectorAll("#check input").forEach(cb => {
+    try { cb.checked = localStorage.getItem("radar-" + cb.id) === "1"; } catch(e){}
+    cb.addEventListener("change", () => { try { localStorage.setItem("radar-" + cb.id, cb.checked ? "1" : "0"); } catch(e){} });
+  });
+})();
+</script>
+
+</body>
+</html>
